@@ -6,12 +6,12 @@ namespace air_hockey
     {
         RectangleShape line;
         bool isBot;
-        public Line(RenderWindow window, SFML.System.Vector2f position, bool isaBot)
+        public Line(RenderWindow window, SFML.System.Vector2f position)
         {
             line = new RectangleShape();
             line.Size = new SFML.System.Vector2f(5, 100);
             line.Position = position;
-            isBot = isaBot;
+            //isBot = isaBot;
             window.Draw(line);
         }
     }

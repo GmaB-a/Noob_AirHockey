@@ -62,8 +62,8 @@ namespace air_hockey
         
         void DrawLines()
         {
-            line1 = new Line(window, player1Position, false);
-            line2 = new Line(window, player2Position, true);
+            line1 = new Line(window, player1Position);
+            line2 = new Line(window, player2Position);
 
             window.Draw(line1);
             window.Draw(line2);
