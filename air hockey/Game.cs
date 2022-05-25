@@ -73,9 +73,13 @@ namespace air_hockey
         {
             if (Keyboard.IsKeyPressed(Keyboard.Key.W)) player1Position.Y -= lineSpeed;
             if (Keyboard.IsKeyPressed(Keyboard.Key.S)) player1Position.Y += lineSpeed;
+            if (player1Position.Y < line1.Size.Y) player1Position.Y = line1.Size.Y;
+            if (player1Position.Y + line1.Size.Y > window.Size.Y) player1Position.Y = window.Size.Y - line1.Size.Y;
 
             if (Keyboard.IsKeyPressed(Keyboard.Key.Up)) player2Position.Y -= lineSpeed;
             if (Keyboard.IsKeyPressed(Keyboard.Key.Down)) player2Position.Y += lineSpeed;
+            if (player2Position.Y < line2.Size.Y) player2Position.Y = line2.Size.Y;
+            else if (player2Position.Y > window.Size.Y - line2.Size.Y) player2Position.Y = window.Size.Y - line2.Size.Y;
         }
 
         void DrawScores()
