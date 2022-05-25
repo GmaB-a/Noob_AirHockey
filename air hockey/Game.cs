@@ -49,7 +49,7 @@ namespace air_hockey
                 DrawLines();
                 BallLogic();
                 MoveLine();
-                DrawScores();
+                //DrawScores();
 
                 window.Display();
             }
@@ -82,7 +82,7 @@ namespace air_hockey
             if (player2Position.Y + line2.Size.Y > window.Size.Y) player2Position.Y = window.Size.Y - line2.Size.Y;
         }
 
-        void DrawScores()
+        /*void DrawScores()
         {
             string stringScores = player1Score + " : " + player2Score;
             Text scores = new Text();
@@ -91,7 +91,7 @@ namespace air_hockey
             scores.FillColor = Color.White;
             scores.Position = new SFML.System.Vector2f(window.Size.X / 2, 160);
             window.Draw(scores);
-        }
+        } */
 
         void BallLogic()
         {
