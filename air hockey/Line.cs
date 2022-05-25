@@ -5,11 +5,13 @@ namespace air_hockey
     internal class Line : RectangleShape
     {
         RectangleShape line;
-        public Line(RenderWindow window, SFML.System.Vector2f position)
+        bool isBot;
+        public Line(RenderWindow window, SFML.System.Vector2f position, bool isaBot)
         {
             line = new RectangleShape();
             line.Size = new SFML.System.Vector2f(5, 100);
             line.Position = position;
+            isBot = isaBot;
             window.Draw(line);
         }
     }
