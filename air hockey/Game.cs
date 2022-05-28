@@ -6,80 +6,78 @@ using System.IO;
 using System.Threading.Tasks;
 using SFML.Window;
 using SFML.Graphics;
+using SFML.System;
 
 namespace air_hockey
 {
     internal class Game
     {
-        RenderWindow window;
+        private RenderWindow window = new RenderWindow(new VideoMode(1600, 900), "Game window");
 
-        Line line1;
-        Line line2;
-        float lineSpeed = 0.2f;
+        private Player player1;
+        private Player player2;
 
-        int player1Score = 0;
-        int player2Score = 0;
-
-        SFML.System.Vector2f player1Position;
-        SFML.System.Vector2f player2Position;
-
-        float ballSpeed = 0.3f;
-        bool isBallMoving = false;
-        SFML.System.Vector2f ballSpawnPosition;
-        SFML.System.Vector2f ballPosition;
-        SFML.System.Vector2f ballMoveDirection;
-
-        Random rnd = new Random();
+        private Ball ball = new Ball(5f);
+        private Random rnd = new Random();
+        public float lineSpeed = 0.2f;
         public void Play()
         {
-            window = new RenderWindow(new VideoMode(1600, 900), "Game window");
             window.Closed += WindowClosed;
 
-            player1Position = new SFML.System.Vector2f(50, window.Size.Y / 2 - 25);
-            player2Position = new SFML.System.Vector2f(window.Size.X - 50, window.Size.Y / 2 - 25);
+            player1 = new Player(window, new Vector2f(50, window.Size.Y / 2 - 25));
+            player2 = new Player(window, new Vector2f(window.Size.X - 50, window.Size.Y / 2 - 25));
 
-            ballSpawnPosition = new SFML.System.Vector2f(window.Size.X / 2, window.Size.Y / 2);
-            ballPosition = ballSpawnPosition;
+            ball.spawnPosition = new Vector2f(window.Size.X / 2, window.Size.Y / 2);
+            ball.Position = ball.spawnPosition;
 
             while (window.IsOpen)
             {
-                window.Clear();
                 window.DispatchEvents();
+                window.Clear();
 
-                DrawLines();
+                GetInput();
                 BallLogic();
-                MoveLine();
+                DrawLines();
                 //DrawScores();
+                CoinLogic();
 
                 window.Display();
             }
         }
-        void WindowClosed(object sender, EventArgs e)
+
+        private void WindowClosed(object sender, EventArgs e)
         {
             RenderWindow w = (RenderWindow)sender;
             w.Close();
         }
-        
-        void DrawLines()
-        {
-            line1 = new Line(window, player1Position);
-            line2 = new Line(window, player2Position);
 
-            window.Draw(line1);
-            window.Draw(line2);
+        private void DrawLines()
+        {
+            window.Draw(player1.line);
+            window.Draw(player2.line);
         }
 
-        void MoveLine()
+        private void GetInput()
         {
-            if (Keyboard.IsKeyPressed(Keyboard.Key.W)) player1Position.Y -= lineSpeed;
-            if (Keyboard.IsKeyPressed(Keyboard.Key.S)) player1Position.Y += lineSpeed;
-            if (player1Position.Y < line1.Size.Y) player1Position.Y = line1.Size.Y;
-            if (player1Position.Y + line1.Size.Y > window.Size.Y) player1Position.Y = window.Size.Y - line1.Size.Y;
+            if (Keyboard.IsKeyPressed(Keyboard.Key.W)) CheckIfCanMove(player1.line, -1);
+            if (Keyboard.IsKeyPressed(Keyboard.Key.S)) CheckIfCanMove(player1.line, 1);
 
-            if (Keyboard.IsKeyPressed(Keyboard.Key.Up)) player2Position.Y -= lineSpeed;
-            if (Keyboard.IsKeyPressed(Keyboard.Key.Down)) player2Position.Y += lineSpeed;
-            if (player2Position.Y < 0) player2Position.Y = line2.Size.Y;
-            if (player2Position.Y + line2.Size.Y > window.Size.Y) player2Position.Y = window.Size.Y - line2.Size.Y;
+
+            if (Keyboard.IsKeyPressed(Keyboard.Key.Up)) CheckIfCanMove(player2.line, -1);
+            if (Keyboard.IsKeyPressed(Keyboard.Key.Down)) CheckIfCanMove(player2.line, 1);
+        }
+
+        private void CheckIfCanMove(RectangleShape line, int dy)
+        {
+            if ((line.Position.Y - lineSpeed < 0) && dy < 0) return;
+            if ((line.Position.Y + line.Size.Y + lineSpeed > window.Size.Y) && dy > 0) return;
+            Move(line, dy);
+        }
+
+        private void Move(RectangleShape line, int dy)
+        {
+            Vector2f newPosition = new Vector2f(line.Position.X, line.Position.Y + dy * lineSpeed);
+            line.Position = newPosition;
         }
 
         /*void DrawScores()
@@ -93,56 +91,79 @@ namespace air_hockey
             window.Draw(scores);
         } */
 
-        void BallLogic()
+        private void BallLogic()
         {
-            CircleShape ball = new CircleShape();
-            ball.Radius = 2f;
-            ball.FillColor = Color.White;
-            ball.Position = ballPosition;
-            if (!isBallMoving)
+            if (!ball.isMoving)
             {
-                while (ballMoveDirection == new SFML.System.Vector2f(0,0)) 
-                    ballMoveDirection = new SFML.System.Vector2f((float)rnd.NextDouble() * rnd.Next(-1, 2), (float)rnd.NextDouble() * rnd.Next(-1, 2));
-                isBallMoving = true;
+                while (ball.moveDirection == new Vector2f(0, 0))
+                    ball.moveDirection = new Vector2f((float)rnd.NextDouble() * rnd.Next(-1, 2), (float)rnd.NextDouble() * rnd.Next(-1, 2));
+                ball.isMoving = true;
             }
-            ballPosition += ballMoveDirection * ballSpeed;
-            CheckIfSomebodyGotScore(ball);
-            CheckIfShouldChangeDirection(ball);;
+            ball.Position += ball.moveDirection * ball.speed;
+            CheckIfSomebodyGotScore();
+            CheckIfShouldChangeDirection(); ;
             window.Draw(ball);
         }
 
-        void CheckIfSomebodyGotScore(CircleShape ball)
+        private void CheckIfSomebodyGotScore()
         {
             if (ball.Position.X >= window.Size.X - ball.Radius)
             {
-                ballPosition = ballSpawnPosition;
-                isBallMoving = false;
-                player1Score++;
+                ball.Position = ball.spawnPosition;
+                ball.isMoving = false;
+                player1.score++;
             }
-            else if(ball.Position.X <= ball.Radius)
+            else if (ball.Position.X <= ball.Radius)
             {
-                ballPosition = ballSpawnPosition;
-                isBallMoving = false;
-                player2Score++;
+                ball.Position = ball.spawnPosition;
+                ball.isMoving = false;
+                player2.score++;
             }
         }
-        void CheckIfShouldChangeDirection(CircleShape ball)
+        private void CheckIfShouldChangeDirection()
         {
-            if (ball.Position.Y > window.Size.Y - ball.Radius && ballMoveDirection.Y > 0) ballMoveDirection.Y *= -1f;
-            else if (ball.Position.Y < ball.Radius && ballMoveDirection.Y < 0) ballMoveDirection.Y *= -1f;
-            CheckIfHitPlayerLine(ball);
+            if (ball.Position.Y > window.Size.Y - ball.Radius && ball.moveDirection.Y > 0) ball.moveDirection.Y *= -1f;
+            else if (ball.Position.Y < ball.Radius && ball.moveDirection.Y < 0) ball.moveDirection.Y *= -1f;
+            CheckIfHitPlayerLine();
         }
-        void CheckIfHitPlayerLine(CircleShape ball)
+
+        void CheckIfHitPlayerLine()
         {
-            if ((ball.Position.Y > line1.Position.Y) && (ball.Position.Y < line1.Position.Y + line1.Size.Y))
+            if (IsOnRightY(player1))
             {
-               if (line1.Position.X >= ball.Position.X + ball.Radius) ballMoveDirection.X *= -1f;
+                if (IsOnRightX(player1, 1))
+                {
+                    ChangeDirectionAndLastStriked(player1);
+                }
             }
 
-            if ((ball.Position.Y > line2.Position.Y) && (ball.Position.Y < line2.Position.Y + line2.Size.Y))
+            if (IsOnRightY(player2))
             {
-               if (line2.Position.X >= ball.Position.X + ball.Radius) ballMoveDirection.X *= -1f;
+                if (IsOnRightX(player2, 2))
+                {
+                    ChangeDirectionAndLastStriked(player2);
+                }
             }
+        }
+
+        private bool IsOnRightY(Player player)
+            => (ball.Position.Y > player.line.Position.Y) && (ball.Position.Y < player.line.Position.Y + player.line.Size.Y);
+
+        private bool IsOnRightX(Player player, int operator_func)
+        {
+            if(operator_func == 1) return player.line.Position.X > ball.Position.X + ball.Radius;
+            return player.line.Position.X < ball.Position.X + ball.Radius;
+        }
+
+        private void ChangeDirectionAndLastStriked(Player player)
+        {
+            ball.moveDirection.X *= -1f;
+            ball.lastStriked = player;
+        }
+
+        private void CoinLogic()
+        {
+
         }
     }
 }
